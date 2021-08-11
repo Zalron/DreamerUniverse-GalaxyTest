@@ -1,8 +1,14 @@
 #include <iostream>
 #include "flecs.h"
+#include "GalaxyComponents.h"
 
 int main() 
 {
-	std::cout << "This is a Program!" << std::endl;
+	flecs::world world;
+
+	auto e = world.entity("Item").set<GalaxyComponents::SectorNumber>({ 27 });
+
+	while (world.progress()) {};
+
 	return 0;
 }
