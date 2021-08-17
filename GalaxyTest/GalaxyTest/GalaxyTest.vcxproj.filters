@@ -24,6 +24,9 @@
     <ClCompile Include="src\GalaxySystems.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="include\flecs_os_api_stdcpp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\flecs.h">
@@ -33,6 +36,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\GalaxySystems.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\flecs_os_api_stdcpp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

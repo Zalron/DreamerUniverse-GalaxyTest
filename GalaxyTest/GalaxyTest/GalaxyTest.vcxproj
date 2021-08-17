@@ -144,11 +144,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="include\flecs.c" />
+    <ClCompile Include="include\flecs_os_api_stdcpp.cpp" />
     <ClCompile Include="src\GalaxySystems.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\flecs.h" />
+    <ClInclude Include="include\flecs_os_api_stdcpp.h" />
     <ClInclude Include="src\GalaxyComponents.h" />
     <ClInclude Include="src\GalaxySystems.h" />
   </ItemGroup>

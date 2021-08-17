@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+#include <iostream>
+
 #include "flecs.h"
 
 struct GalaxyComponents 
@@ -15,12 +17,16 @@ struct GalaxyComponents
 		world.component<Sector>();
 		world.component<SectorStage>();
 		world.component<SectorNumber>();
+		world.component<StarCoord>();
+		world.component<StarSystem>();
+		world.component<Star>();
+		world.component<Planet>();
 	};
 	struct Galaxy 
 	{
-		int16_t size;
+		uint16_t size;
 		//GalaxyType Galaxytype;
-		int16_t year;
+		uint16_t year;
 	};
 
 	struct SectorGridCoord
@@ -45,5 +51,28 @@ struct GalaxyComponents
 	struct SectorNumber 
 	{
 		uint8_t SectorNumber;
+	};
+
+	struct StarCoord 
+	{
+		uint16_t Xcoord;
+		uint16_t Ycoord;
+		uint16_t Zcoord;
+	};
+
+	struct StarSystem
+	{
+		uint8_t size;
+		uint8_t numPlants;
+	};
+
+	struct Star 
+	{
+		uint8_t size;
+	};
+
+	struct Planet 
+	{
+		uint8_t size;
 	};
 };
