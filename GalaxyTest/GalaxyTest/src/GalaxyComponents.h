@@ -19,6 +19,7 @@ struct GalaxyComponents
 		world.component<SectorNumber>();
 		world.component<StarCoord>();
 		world.component<StarSystem>();
+		world.component<StarSystemStage>();
 		world.component<Star>();
 		world.component<Planet>();
 	};
@@ -62,8 +63,13 @@ struct GalaxyComponents
 
 	struct StarSystem
 	{
-		uint8_t size;
-		uint8_t numPlants;
+		uint16_t size;
+		uint16_t numPlants;
+	};
+
+	struct StarSystemStage 
+	{
+		uint8_t stage;
 	};
 
 	struct Star 

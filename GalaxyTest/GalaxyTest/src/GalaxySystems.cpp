@@ -16,7 +16,7 @@ void GalaxySystems::CreateGalaxySector(const flecs::iter& iter, GalaxyComponents
 						e.set<GalaxyComponents::SectorGridCoord>({ x, y, z });
 						e.set<GalaxyComponents::Sector>({0,0});
 						e.set<GalaxyComponents::SectorStage>({1});
-						std::cout << " This entity generated with the coordinates of " << x << " " << y << " " << z << std::endl;
+						//std::cout << " This entity generated with the coordinates of " << x << " " << y << " " << z << std::endl;
 					}
 				}
 			}
@@ -36,7 +36,7 @@ void GalaxySystems::CreateSectorStars(const flecs::iter& iter, GalaxyComponents:
 		if (ss->stage == 1) 
 		{
 			s->numStars = CreatingRandom32BitIntNumbers(CreatingSeed(), 3000, 5000 );
-			std::cout << " This entity with sectorcoords of " << sgc->Xcoord << " " << sgc->Ycoord << " " << sgc->Zcoord << " generated this amount of stars of " << s->numStars << std::endl;
+			//std::cout << " This entity with sectorcoords of " << sgc->Xcoord << " " << sgc->Ycoord << " " << sgc->Zcoord << " generated this amount of stars of " << s->numStars << std::endl;
 			ss->stage = 2;
 		}
 	}
@@ -55,14 +55,36 @@ void GalaxySystems::CreateStarsFromSectorCount(const flecs::iter& iter, GalaxyCo
 				uint16_t yCoord = CreatingRandom32BitIntNumbers(CreatingSeed(), 0, 1000);
 				uint16_t zCoord = CreatingRandom32BitIntNumbers(CreatingSeed(), 0, 1000);
 				e.set<GalaxyComponents::StarCoord>({xCoord, yCoord, zCoord});
-				std::cout << " This entity with starcoords of " << xCoord << " " << yCoord << " " << zCoord << " is generated this amount of stars of " << std::endl;
+				//std::cout << " This entity with starcoords of " << xCoord << " " << yCoord << " " << zCoord << " is generated this amount of stars of " << std::endl;
 
-				uint8_t starSize = CreatingRandom32BitIntNumbers(CreatingSeed(), 0, 10);
-				uint8_t numPlanet = CreatingRandom32BitIntNumbers(CreatingSeed(), 0, 10);
+				uint16_t starSize = CreatingRandom32BitIntNumbers(CreatingSeed(), 1, 10);
+				uint16_t numPlanet = CreatingRandom32BitIntNumbers(CreatingSeed(), 0, 10);
 				e.set<GalaxyComponents::StarSystem>({ starSize, numPlanet });
-				std::cout << " This entity with starsize and numPlants of " << starSize << " " << numPlanet << std::endl;
+				e.set<GalaxyComponents::StarSystemStage>({ 1 });
+				//std::cout << " This entity with starsize and numPlants of " << starSize << " " << numPlanet << std::endl;
 			}
 			ss->stage = 3;
+		}
+	}
+}
+
+void GalaxySystems::CreatePlanetsFromStarSystem(const flecs::iter& iter, GalaxyComponents::StarSystem* ssy, GalaxyComponents::StarSystemStage* sss)
+{
+	for (auto it : iter)
+	{
+		if (sss->stage == 1) 
+		{
+			auto e = iter.world().entity().child_of(it);
+			uint8_t StarSize = CreatingRandom32BitIntNumbers(CreatingSeed(), 1, 10);
+			e.set<GalaxyComponents::Star>({ StarSize });
+			for (int16_t i = 0; i < ssy->numPlants; i++)
+			{
+				auto e = iter.world().entity().child_of(it);
+				uint8_t planetSize = CreatingRandom32BitIntNumbers(CreatingSeed(), 1, 10);
+				e.set<GalaxyComponents::Planet>({ planetSize });
+				//std::cout << " This entity with planet generated the planetsize of " << planetSize << std::endl;
+			}
+			sss->stage = 2;
 		}
 	}
 }
