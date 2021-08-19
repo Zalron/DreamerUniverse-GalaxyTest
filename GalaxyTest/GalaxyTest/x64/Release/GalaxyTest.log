@@ -8,6 +8,6 @@ C:\Users\David Work\Desktop\Dreamer Universe projects\DreamerUniverse-GalaxyTest
      Creating library C:\Users\David Work\Desktop\Dreamer Universe projects\DreamerUniverse-GalaxyTest\GalaxyTest\x64\Release\GalaxyTest.lib and object C:\Users\David Work\Desktop\Dreamer Universe projects\DreamerUniverse-GalaxyTest\GalaxyTest\x64\Release\GalaxyTest.exp
   Generating code
   Previous IPDB not found, fall back to full compilation.
-  All 1717 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  All 1798 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
   Finished generating code
   GalaxyTest.vcxproj -> C:\Users\David Work\Desktop\Dreamer Universe projects\DreamerUniverse-GalaxyTest\GalaxyTest\x64\Release\GalaxyTest.exe

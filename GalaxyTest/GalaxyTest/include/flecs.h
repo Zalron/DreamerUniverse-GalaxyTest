@@ -584,12 +584,15 @@ void ecs_log_pop(void);
 #define ecs_deprecated(...)
 #endif
 
-/* If in debug mode and no tracing verbosity is defined, compile all tracing */
-#if !defined(NDEBUG) && !(defined(ECS_TRACE_0) || defined(ECS_TRACE_1) || defined(ECS_TRACE_2) || defined(ECS_TRACE_3))
-#define ECS_TRACE_3
+/* If no tracing verbosity is defined, pick default based on build config */
+#if !(defined(ECS_TRACE_0) || defined(ECS_TRACE_1) || defined(ECS_TRACE_2) || defined(ECS_TRACE_3))
+#if !defined(NDEBUG)
+#define ECS_TRACE_3 /* Enable all tracing in debug mode. May slow things down */
+#else
+#define ECS_TRACE_1 /* Only enable infrequent tracing in release mode */
+#endif
 #endif
 
-#ifndef NDEBUG
 #if defined(ECS_TRACE_3)
 #define ecs_trace_1(...) ecs_trace(1, __VA_ARGS__);
 #define ecs_trace_2(...) ecs_trace(2, __VA_ARGS__);
@@ -609,7 +612,6 @@ void ecs_log_pop(void);
 #define ecs_trace_1(...)
 #define ecs_trace_2(...)
 #define ecs_trace_3(...)
-#endif
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1924,12 +1926,14 @@ void ecs_os_set_api_defaults(void);
 #define ecs_os_alloca(size) alloca((size_t)(size))
 #endif
 
-#define ecs_os_malloc_t(T) (T*)(ecs_os_malloc(ECS_SIZEOF(T)))
-#define ecs_os_malloc_n(T, count) (T*)(ecs_os_malloc(ECS_SIZEOF(T) * count))
-#define ecs_os_calloc_t(T) (T*)(ecs_os_calloc(ECS_SIZEOF(T)))
-#define ecs_os_calloc_n(T, count) (T*)(ecs_os_calloc(ECS_SIZEOF(T) * count))
-#define ecs_os_alloca_t(T) (T*)(ecs_os_alloca(ECS_SIZEOF(T)))
-#define ecs_os_alloca_n(T, count) (T*)(ecs_os_alloca(ECS_SIZEOF(T) * count))
+#define ecs_os_malloc_t(T) ECS_CAST(T*, ecs_os_malloc(ECS_SIZEOF(T)))
+#define ecs_os_malloc_n(T, count) ECS_CAST(T*, ecs_os_malloc(ECS_SIZEOF(T) * (count)))
+#define ecs_os_calloc_t(T) ECS_CAST(T*, ecs_os_calloc(ECS_SIZEOF(T)))
+#define ecs_os_calloc_n(T, count) ECS_CAST(T*, ecs_os_calloc(ECS_SIZEOF(T) * (count)))
+#define ecs_os_realloc_t(ptr, T) ECS_CAST(T*, ecs_os_realloc([ptr, ECS_SIZEOF(T)))
+#define ecs_os_realloc_n(ptr, T, count) ECS_CAST(T*, ecs_os_realloc(ptr, ECS_SIZEOF(T) * (count)))
+#define ecs_os_alloca_t(T) ECS_CAST(T*, ecs_os_alloca(ECS_SIZEOF(T)))
+#define ecs_os_alloca_n(T, count) ECS_CAST(T*, ecs_os_alloca(ECS_SIZEOF(T) * (count)))
 
 /* Strings */
 #ifndef ecs_os_strdup
@@ -1961,7 +1965,8 @@ void ecs_os_set_api_defaults(void);
 #define ecs_os_memset_t(ptr, value, T) ecs_os_memset(ptr, value, ECS_SIZEOF(T))
 #define ecs_os_memset_n(ptr, value, T, count) ecs_os_memset(ptr, value, ECS_SIZEOF(T) * count)
 
-#define ecs_os_strcmp(str1, str2) strcmp(str1, str2)
+#define ecs_os_memdup_t(ptr, T) ecs_os_memdup(ptr, ECS_SIZEOF(T))
+#define ecs_os_memdup_n(ptr, T, count) ecs_os_memdup(ptr, ECS_SIZEOF(T) * count)
 
 #if defined(_MSC_VER)
 #define ecs_os_strcat(str1, str2) strcat_s(str1, INT_MAX, str2)
@@ -2158,6 +2163,9 @@ typedef struct ecs_ref_t ecs_ref_t;
 
 /* Maximum number of terms cached in static arrays */
 #define ECS_TERM_CACHE_SIZE (8)
+
+/* Maximum number of terms in desc (larger, as these are temp objects) */
+#define ECS_TERM_DESC_CACHE_SIZE (16)
 
 /* Maximum number of events to set in static array of trigger descriptor */
 #define ECS_TRIGGER_DESC_EVENT_COUNT_MAX (8)
@@ -2973,7 +2981,7 @@ typedef struct ecs_type_desc_t {
 typedef struct ecs_filter_desc_t {
     /* Terms of the filter. If a filter has more terms than 
      * ECS_TERM_CACHE_SIZE use terms_buffer */
-    ecs_term_t terms[ECS_TERM_CACHE_SIZE];
+    ecs_term_t terms[ECS_TERM_DESC_CACHE_SIZE];
 
     /* For filters with lots of terms an outside array can be provided. */
     ecs_term_t *terms_buffer;
@@ -4432,6 +4440,15 @@ void ecs_end_wait(
 FLECS_API
 void ecs_tracing_enable(
     int level);
+
+/** Enable/disable tracing with colors.
+ * By default colors are enabled.
+ *
+ * @param enabled Whether to enable tracing with colors.
+ */
+FLECS_API
+void ecs_tracing_color_enable(
+    bool enabled);
 
 /** Measure frame time. 
  * Frame time measurements measure the total time passed in a single frame, and 
@@ -6037,7 +6054,7 @@ const char* ecs_set_name_prefix(
  */
 FLECS_API
 ecs_iter_t ecs_term_iter(
-    ecs_world_t *world,
+    const ecs_world_t *world,
     ecs_term_t *term);
 
 /** Progress the term iterator.
@@ -6278,7 +6295,7 @@ char* ecs_filter_str(
  */
 FLECS_API
 ecs_iter_t ecs_filter_iter(
-    ecs_world_t *world,
+    const ecs_world_t *world,
     const ecs_filter_t *filter);  
 
 /** Iterate tables matched by filter.
@@ -11287,6 +11304,14 @@ public:
         ecs_tracing_enable(level);
     }
 
+    /** Enable tracing with colors.
+     *
+     * @param enabled Whether to enable tracing with colors.
+     */
+    static void enable_tracing_color(bool enabled) {
+        ecs_tracing_color_enable(enabled);
+    }    
+
     void set_pipeline(const flecs::pipeline& pip) const;
 
     /** Progress world, run all systems.
@@ -14453,8 +14478,8 @@ flecs::entity pod_component(
          * this operation does nothing besides returning the existing id */
         id = _::cpp_type<T>::id_explicit(world, name, allow_tag, id);
 
-        /* If entity is not empty check if the name matches */
-        if (ecs_get_type(world, id) != nullptr) {
+        /* If entity has a name check if it matches */
+        if (ecs_get_name(world, id) != nullptr) {
             if (!implicit_name && id >= EcsFirstUserComponentId) {
                 char *path = ecs_get_path_w_sep(
                     world, 0, id, "::", nullptr);
@@ -14592,6 +14617,7 @@ flecs::entity_t type_id() {
 }
 
 } // namespace flecs
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //// Utility class to invoke a system each
@@ -15518,9 +15544,26 @@ public:
     }
 
     Base& term() {
-        ecs_assert(m_term_index < ECS_TERM_CACHE_SIZE, 
-            ECS_INVALID_PARAMETER, NULL);
-        this->set_term(&m_desc->terms[m_term_index]);
+        if (m_term_index >= ECS_TERM_DESC_CACHE_SIZE) {
+            if (m_term_index == ECS_TERM_DESC_CACHE_SIZE) {
+                m_desc->terms_buffer = ecs_os_calloc_n(
+                    ecs_term_t, m_term_index + 1);
+                ecs_os_memcpy_n(m_desc->terms_buffer, m_desc->terms, 
+                    ecs_term_t, m_term_index);
+                ecs_os_memset_n(m_desc->terms, 0, 
+                    ecs_term_t, ECS_TERM_DESC_CACHE_SIZE);
+            } else {
+                m_desc->terms_buffer = ecs_os_realloc_n(m_desc->terms_buffer, 
+                    ecs_term_t, m_term_index + 1);
+            }
+
+            m_desc->terms_buffer_count = m_term_index + 1;
+
+            this->set_term(&m_desc->terms_buffer[m_term_index]);
+        } else {
+            this->set_term(&m_desc->terms[m_term_index]);
+        }
+
         m_term_index ++;
         return *this;
     }
@@ -15961,6 +16004,10 @@ public:
             ecs_abort(ECS_INVALID_PARAMETER, NULL);
         }
 
+        if (this->m_desc.terms_buffer) {
+            ecs_os_free(m_desc.terms_buffer);
+        }
+
         return f;
     }    
 
@@ -16014,7 +16061,17 @@ public:
     operator query<Components ...>() const;
 
     operator ecs_query_t*() const {
-        return ecs_query_init(this->m_world, &this->m_desc);
+        ecs_query_t *result = ecs_query_init(this->m_world, &this->m_desc);
+
+        if (!result) {
+            ecs_abort(ECS_INVALID_PARAMETER, NULL);
+        }
+
+        if (this->m_desc.filter.terms_buffer) {
+            ecs_os_free(m_desc.filter.terms_buffer);
+        }
+        
+        return result;
     }    
 
     query<Components ...> build() const;
@@ -16120,6 +16177,10 @@ private:
             e = ecs_system_init(m_world, &desc);
         }
 
+        if (this->m_desc.query.filter.terms_buffer) {
+            ecs_os_free(m_desc.query.filter.terms_buffer);
+        }
+
         return e;
     }
 };
@@ -16171,7 +16232,13 @@ private:
         desc.binding_ctx_free = reinterpret_cast<
             ecs_ctx_free_t>(_::free_obj<Invoker>);
 
-        return ecs_observer_init(m_world, &desc);
+        ecs_entity_t result = ecs_observer_init(m_world, &desc);
+
+        if (this->m_desc.filter.terms_buffer) {
+            ecs_os_free(m_desc.filter.terms_buffer);
+        }
+
+        return result;
     }
 };
 
