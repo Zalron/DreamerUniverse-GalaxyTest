@@ -2469,11 +2469,6 @@ ecs_data_t* flecs_init_data(
                 0);
             result->sw_columns[i].data = sw;
             result->sw_columns[i].type = sw_type;
-
-            int32_t column_id = i + table->sw_column_offset;
-            result->columns[column_id].data = flecs_switch_values(sw);
-            result->columns[column_id].size = sizeof(ecs_entity_t);
-            result->columns[column_id].alignment = ECS_ALIGNOF(ecs_entity_t);
         }
     }
     
@@ -12211,7 +12206,7 @@ struct ecs_snapshot_t {
 
 static
 ecs_data_t* duplicate_data(
-    ecs_world_t *world,
+    const ecs_world_t *world,
     ecs_table_t *table,
     ecs_data_t *main_data)
 {
@@ -12251,13 +12246,13 @@ ecs_data_t* duplicate_data(
             
             ecs_xtor_t ctor = cdata->lifecycle.ctor;
             if (ctor) {
-                ctor(world, component, entities, dst_ptr, flecs_to_size_t(size), 
-                    count, ctx);
+                ctor((ecs_world_t*)world, component, entities, dst_ptr, 
+                    flecs_to_size_t(size), count, ctx);
             }
 
             void *src_ptr = ecs_vector_first_t(column->data, size, alignment);
-            copy(world, component, entities, entities, dst_ptr, src_ptr, 
-                flecs_to_size_t(size), count, ctx);
+            copy((ecs_world_t*)world, component, entities, entities, dst_ptr, 
+                src_ptr, flecs_to_size_t(size), count, ctx);
 
             column->data = dst_vec;
         } else {
@@ -12270,7 +12265,7 @@ ecs_data_t* duplicate_data(
 
 static
 ecs_snapshot_t* snapshot_create(
-    ecs_world_t *world,
+    const ecs_world_t *world,
     const ecs_sparse_t *entity_index,
     ecs_iter_t *iter,
     ecs_iter_next_action_t next)
@@ -12278,7 +12273,7 @@ ecs_snapshot_t* snapshot_create(
     ecs_snapshot_t *result = ecs_os_calloc(ECS_SIZEOF(ecs_snapshot_t));
     ecs_assert(result != NULL, ECS_OUT_OF_MEMORY, NULL);
 
-    result->world = world;
+    result->world = (ecs_world_t*)world;
 
     /* If no iterator is provided, the snapshot will be taken of the entire
      * world, and we can simply copy the entity index as it will be restored
@@ -12326,8 +12321,10 @@ ecs_snapshot_t* snapshot_create(
 
 /** Create a snapshot */
 ecs_snapshot_t* ecs_snapshot_take(
-    ecs_world_t *world)
+    ecs_world_t *stage)
 {
+    const ecs_world_t *world = ecs_get_world(stage);
+
     ecs_snapshot_t *result = snapshot_create(
         world,
         world->store.entity_index,
@@ -16934,6 +16931,7 @@ int ecs_filter_init(
         if (!filter_out->expr) {
             if (term_count < ECS_TERM_CACHE_SIZE) {
                 filter_out->terms = filter_out->term_cache;
+                filter_out->term_cache_used = true;
             } else {
                 filter_out->terms = ecs_os_malloc_n(ecs_term_t, term_count);
             }
@@ -16948,6 +16946,10 @@ int ecs_filter_init(
 
     filter_out->name = ecs_os_strdup(desc->name);
     filter_out->expr = ecs_os_strdup(desc->expr);
+
+    ecs_assert(!filter_out->term_cache_used || 
+        filter_out->terms == filter_out->term_cache,
+        ECS_INTERNAL_ERROR, NULL);
 
     return 0;
 error:
@@ -16973,7 +16975,7 @@ void ecs_filter_copy(
 
         int32_t term_count = src->term_count;
 
-        if (src->terms == src->term_cache) {
+        if (src->term_cache_used) {
             dst->terms = dst->term_cache;
         } else {
             dst->terms = ecs_os_memdup_n(src->terms, ecs_term_t, term_count);
@@ -16995,7 +16997,7 @@ void ecs_filter_move(
     if (src) {
         *dst = *src;
 
-        if (src->terms == src->term_cache) {
+        if (src->term_cache_used) {
             dst->terms = dst->term_cache;
         }
 
@@ -17015,7 +17017,7 @@ void ecs_filter_fini(
             ecs_term_fini(&filter->terms[i]);
         }
 
-        if (filter->terms != filter->term_cache) {
+        if (!filter->term_cache_used) {
             ecs_os_free(filter->terms);
         }
     }
@@ -17046,6 +17048,9 @@ char* ecs_filter_str(
     const ecs_filter_t *filter)
 {
     ecs_strbuf_t buf = ECS_STRBUF_INIT;
+
+    ecs_assert(!filter->term_cache_used || filter->terms == filter->term_cache,
+        ECS_INTERNAL_ERROR, NULL);
 
     ecs_term_t *terms = filter->terms;
     int32_t i, count = filter->term_count;
@@ -17226,6 +17231,9 @@ bool flecs_filter_match_table(
 {
     ecs_assert(world != NULL, ECS_INVALID_PARAMETER, NULL);
     ecs_assert(filter != NULL, ECS_INVALID_PARAMETER, NULL);
+
+    ecs_assert(!filter->term_cache_used || filter->terms == filter->term_cache,
+        ECS_INTERNAL_ERROR, NULL);
 
     ecs_term_t *terms = filter->terms;
     int32_t i, count = filter->term_count;
@@ -17525,11 +17533,14 @@ ecs_iter_t ecs_filter_iter(
     if (filter) {
         iter->filter = *filter;
 
-        if (filter->terms == filter->term_cache) {
+        if (filter->term_cache_used) {
             iter->filter.terms = iter->filter.term_cache;
         }
 
-        ecs_filter_finalize(world, &iter->filter);        
+        ecs_filter_finalize(world, &iter->filter);
+
+        ecs_assert(!filter->term_cache_used || 
+            filter->terms == filter->term_cache, ECS_INTERNAL_ERROR, NULL);    
     } else {
         ecs_filter_init(world, &iter->filter, &(ecs_filter_desc_t) {
             .terms = {{ .id = EcsWildcard }}
@@ -21521,9 +21532,11 @@ void populate_ptrs(
     ecs_table_t *table = it->table;
     const ecs_data_t *data = NULL;
     ecs_column_t *columns = NULL;
+    ecs_id_t *ids = NULL;
 
     if (table) {
         data = flecs_table_get_data(table);
+        ids = ecs_vector_first(table->type, ecs_id_t);
     }
     if (data) {
         columns = data->columns;
@@ -21548,9 +21561,22 @@ void populate_ptrs(
                 continue;
             }
 
-            ecs_column_t *col = &columns[c_index];
-            it->ptrs[c] = ecs_vector_get_t(
-                col->data, col->size, col->alignment, it->offset);
+            ecs_vector_t *vec;
+            ecs_size_t size, align;
+            if (ECS_HAS_ROLE(ids[c_index], SWITCH)) {
+                ecs_switch_t *sw = data->sw_columns[
+                    c_index - table->sw_column_offset].data;
+                vec = flecs_switch_values(sw);
+                size = ECS_SIZEOF(ecs_entity_t);
+                align = ECS_ALIGNOF(ecs_entity_t);
+            } else {
+                ecs_column_t *col = &columns[c_index];
+                vec = col->data;
+                size = col->size;
+                align = col->alignment;
+            }
+
+            it->ptrs[c] = ecs_vector_get_t(vec, size, align, it->offset);
         } else {
             ecs_ref_t *ref = &it->references[-c_index - 1];
             char buf[255]; ecs_id_str(world, ref->component, buf, 255);
@@ -27771,9 +27797,9 @@ void register_by_name(
             ecs_abort(ECS_ALREADY_DEFINED, 
                 "conflicting entity registered with name '%s'", name);
         }
+    } else {
+        key.value = ecs_os_strdup(key.value);
     }
-
-    key.value = ecs_os_strdup(key.value);
 
     flecs_hashmap_result_t hmr = flecs_hashmap_ensure(
         *map, &key, ecs_entity_t);

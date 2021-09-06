@@ -1,3 +1,4 @@
+// Comment out this line when using as DLL
 #define flecs_STATIC
 /**
  * @file flecs.h
@@ -2321,6 +2322,7 @@ struct ecs_filter_t {
     int32_t term_count_actual; /* Processed count, which folds OR terms */
 
     ecs_term_t term_cache[ECS_TERM_CACHE_SIZE]; /* Cache for small filters */
+    bool term_cache_used;
 
     bool match_this;           /* Has terms that match EcsThis */
     bool match_only_this;      /* Has only terms that match EcsThis */
@@ -10579,7 +10581,7 @@ protected:
 template <typename T>
 class column {
 public:
-    static_assert(std::is_empty<T>() == false, 
+    static_assert(std::is_empty<T>::value == false, 
         "invalid type for column, cannot iterate empty type");
         
     /** Create column from component array.
@@ -15570,8 +15572,10 @@ public:
     
     Base& arg(int32_t term_index) {
         ecs_assert(term_index > 0, ECS_INVALID_PARAMETER, NULL);
+        int32_t prev_index = m_term_index;
         m_term_index = term_index - 1;
         this->term();
+        m_term_index = prev_index;
         ecs_assert(ecs_term_is_initialized(this->m_term), ECS_INVALID_PARAMETER, NULL);
         return *this;
     }    
@@ -16005,11 +16009,11 @@ public:
         }
 
         if (this->m_desc.terms_buffer) {
-            ecs_os_free(m_desc.terms_buffer);
+            ecs_os_free(this->m_desc.terms_buffer);
         }
 
         return f;
-    }    
+    }
 
     filter<Components ...> build() const;
 
