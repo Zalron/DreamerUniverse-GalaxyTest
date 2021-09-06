@@ -16,7 +16,6 @@ struct GalaxyComponents
 		world.component<SectorGridCoord>();
 		world.component<Sector>();
 		world.component<SectorStage>();
-		world.component<SectorNumber>();
 		world.component<StarCoord>();
 		world.component<StarSystem>();
 		world.component<StarSystemStage>();
@@ -28,6 +27,7 @@ struct GalaxyComponents
 		uint16_t size;
 		//GalaxyType Galaxytype;
 		uint16_t year;
+        uint8_t stage;
 	};
 
 	struct SectorGridCoord
@@ -40,18 +40,12 @@ struct GalaxyComponents
 	struct Sector 
 	{
 		uint32_t numStars;
-		//sectortype sectortype;
 		uint16_t sectorLevel;
 	};
 
 	struct SectorStage 
 	{
 		uint8_t stage;
-	};
-
-	struct SectorNumber 
-	{
-		uint8_t SectorNumber;
 	};
 
 	struct StarCoord 
@@ -81,4 +75,13 @@ struct GalaxyComponents
 	{
 		uint8_t size;
 	};
+
+    struct SectorTagCore;
+    struct SectorTagCoreDisk;
+    struct SectorTagMidDisk;
+    struct SectorTagOuterDisk;
+    struct SectorTagEdgeDisk;
+    struct SectorTagHalo;
+    struct SectorTagCluster;
+    struct SectorTagNebular;
 };

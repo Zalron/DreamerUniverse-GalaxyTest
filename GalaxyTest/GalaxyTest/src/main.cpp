@@ -16,7 +16,7 @@ int main()
 
 	world.import<GalaxySystems>();
 
-	auto e = world.entity("Galaxy").set<GalaxyComponents::SectorNumber>({ 1 });
+	world.entity("Galaxy").set<GalaxyComponents::Galaxy>({1000, 0, 1 });
 
 	while (world.progress()) {};
 

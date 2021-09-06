@@ -11,7 +11,7 @@ struct GalaxySystems
 
 		world.module<GalaxySystems>();
 
-		world.system<GalaxyComponents::SectorNumber>("CreateGalaxySector").iter(CreateGalaxySector);
+		world.system<GalaxyComponents::Galaxy>("CreateGalaxySector").iter(CreateGalaxySector);
 
 		world.system<GalaxyComponents::SectorGridCoord, GalaxyComponents::Sector, GalaxyComponents::SectorStage>("CreateSectorStars").iter(CreateSectorStars);
 
@@ -22,7 +22,7 @@ struct GalaxySystems
 
 public:
 
-	static void CreateGalaxySector(const flecs::iter& iter, GalaxyComponents::SectorNumber* ss);
+	static void CreateGalaxySector(const flecs::iter& iter, GalaxyComponents::Galaxy* g);
 	static void CreateSectorStars(const flecs::iter& iter, GalaxyComponents::SectorGridCoord* sgc, GalaxyComponents::Sector* s, GalaxyComponents::SectorStage* ss);
 	static void CreateStarsFromSectorCount(const flecs::iter& iter, GalaxyComponents::Sector* s, GalaxyComponents::SectorStage* ss);
 	static void CreatePlanetsFromStarSystem(const flecs::iter& iter, GalaxyComponents::StarSystem* ssy, GalaxyComponents::StarSystemStage* sss);

@@ -1,10 +1,10 @@
 #include "GalaxySystems.h"
 
-void GalaxySystems::CreateGalaxySector(const flecs::iter& iter, GalaxyComponents::SectorNumber* sn)
+void GalaxySystems::CreateGalaxySector(const flecs::iter& iter, GalaxyComponents::Galaxy* g)
 {
 	for (auto it : iter)
 	{
-		if (sn->SectorNumber == 1) 
+		if (g->stage == 1)
 		{
 			for (int16_t x = -1; x <= 1; x++)
 			{
@@ -20,9 +20,9 @@ void GalaxySystems::CreateGalaxySector(const flecs::iter& iter, GalaxyComponents
 					}
 				}
 			}
-			sn->SectorNumber = 2;
+            g->stage = 2;
 		}
-		if (sn->SectorNumber == 2)
+		if (g->stage == 2)
 		{
 			iter.entity(it).destruct();
 		}
@@ -48,9 +48,9 @@ void GalaxySystems::CreateStarsFromSectorCount(const flecs::iter& iter, GalaxyCo
 	{
 		if (ss->stage == 2) 
 		{
-			for (int16_t x = 0; x <= s->numStars; x++)
+			for (int16_t x = 0; x < s->numStars; x++)
 			{
-				auto e = iter.world().entity().child_of(it);
+				auto e = iter.world().entity().child_of(iter.world().entity());
 				uint16_t xCoord = CreatingRandom32BitIntNumbers(CreatingSeed(), 0, 1000);
 				uint16_t yCoord = CreatingRandom32BitIntNumbers(CreatingSeed(), 0, 1000);
 				uint16_t zCoord = CreatingRandom32BitIntNumbers(CreatingSeed(), 0, 1000);
@@ -74,12 +74,12 @@ void GalaxySystems::CreatePlanetsFromStarSystem(const flecs::iter& iter, GalaxyC
 	{
 		if (sss->stage == 1) 
 		{
-			auto e = iter.world().entity().child_of(it);
+			auto e = iter.world().entity().child_of(iter.world().entity());
 			uint8_t StarSize = CreatingRandom32BitIntNumbers(CreatingSeed(), 1, 10);
 			e.set<GalaxyComponents::Star>({ StarSize });
 			for (int16_t i = 0; i < ssy->numPlants; i++)
 			{
-				auto e = iter.world().entity().child_of(it);
+				auto e = iter.world().entity().child_of(iter.world().entity(it));
 				uint8_t planetSize = CreatingRandom32BitIntNumbers(CreatingSeed(), 1, 10);
 				e.set<GalaxyComponents::Planet>({ planetSize });
 				//std::cout << " This entity with planet generated the planetsize of " << planetSize << std::endl;
