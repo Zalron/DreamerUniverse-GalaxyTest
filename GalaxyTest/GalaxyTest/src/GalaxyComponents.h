@@ -6,6 +6,8 @@
 
 #include "flecs.h"
 
+#include "GalaxyComponentConfig.h"
+
 struct GalaxyComponents 
 {
 	GalaxyComponents(flecs::world& world)

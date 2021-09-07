@@ -12,6 +12,7 @@ add_executable(GalaxyTest
         GalaxyTest/include/flecs_os_api_stdcpp.cpp
         GalaxyTest/include/flecs_os_api_stdcpp.h
         GalaxyTest/src/GalaxyComponents.h
+        GalaxyTest/src/GalaxyComponentConfig.h
         GalaxyTest/src/GalaxySystems.cpp
         GalaxyTest/src/GalaxySystems.h
         GalaxyTest/src/main.cpp)

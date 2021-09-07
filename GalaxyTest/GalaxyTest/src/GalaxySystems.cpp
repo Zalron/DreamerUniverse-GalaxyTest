@@ -6,6 +6,9 @@ void GalaxySystems::CreateGalaxySector(const flecs::iter& iter, GalaxyComponents
 	{
 		if (g->stage == 1)
 		{
+            int16_t gridOffsetX = 500;
+            int16_t gridOffsetY = 0;
+            int16_t gridOffsetZ = 0;
 			for (int16_t x = -1; x <= 1; x++)
 			{
 				for (int16_t y = -1; y <= 1; y++)
@@ -13,10 +16,11 @@ void GalaxySystems::CreateGalaxySector(const flecs::iter& iter, GalaxyComponents
 					for (int16_t z = -1; z <= 1; z++)
 					{
 						auto e = iter.world().entity();
-						e.set<GalaxyComponents::SectorGridCoord>({ x, y, z });
+
+						e.set<GalaxyComponents::SectorGridCoord>({ static_cast<int16_t>(x + gridOffsetX), static_cast<int16_t>(y + gridOffsetY ), static_cast<int16_t>(z + gridOffsetZ)});
 						e.set<GalaxyComponents::Sector>({0,0});
 						e.set<GalaxyComponents::SectorStage>({1});
-						//std::cout << " This entity generated with the coordinates of " << x << " " << y << " " << z << std::endl;
+						//std::cout << " This entity generated with the coordinates of " << x + gridOffsetX << " " << y + gridOffsetY << " " << z + gridOffsetZ << std::endl;
 					}
 				}
 			}
@@ -24,7 +28,7 @@ void GalaxySystems::CreateGalaxySector(const flecs::iter& iter, GalaxyComponents
 		}
 		if (g->stage == 2)
 		{
-			iter.entity(it).destruct();
+			iter.world().entity().destruct();
 		}
 	}
 }
@@ -35,8 +39,42 @@ void GalaxySystems::CreateSectorStars(const flecs::iter& iter, GalaxyComponents:
 	{
 		if (ss->stage == 1) 
 		{
-			s->numStars = CreatingRandom32BitIntNumbers(CreatingSeed(), 3000, 5000 );
-			//std::cout << " This entity with sectorcoords of " << sgc->Xcoord << " " << sgc->Ycoord << " " << sgc->Zcoord << " generated this amount of stars of " << s->numStars << std::endl;
+            if(sgc->Xcoord >= GalaxyComponentsConfig::CoreSector.SectorCoordRangeMinX && sgc->Xcoord <= GalaxyComponentsConfig::CoreSector.SectorCoordRangeMaxX &&
+            sgc->Ycoord >= GalaxyComponentsConfig::CoreSector.SectorCoordRangeMinY && sgc->Ycoord <= GalaxyComponentsConfig::CoreSector.SectorCoordRangeMaxY &&
+            sgc->Zcoord >= GalaxyComponentsConfig::CoreSector.SectorCoordRangeMinZ && sgc->Zcoord <= GalaxyComponentsConfig::CoreSector.SectorCoordRangeMaxZ)
+            {
+                s->numStars = CreatingRandom32BitIntNumbers(CreatingSeed(), GalaxyComponentsConfig::CoreSector.SectorNumStarsMin, GalaxyComponentsConfig::CoreSector.SectorNumStarsMax);
+            }
+            if(sgc->Xcoord >= GalaxyComponentsConfig::CoreDiskSector.SectorCoordRangeMinX && sgc->Xcoord <= GalaxyComponentsConfig::CoreDiskSector.SectorCoordRangeMaxX &&
+            sgc->Ycoord >= GalaxyComponentsConfig::CoreDiskSector.SectorCoordRangeMinY && sgc->Ycoord <= GalaxyComponentsConfig::CoreDiskSector.SectorCoordRangeMaxY &&
+            sgc->Zcoord >= GalaxyComponentsConfig::CoreDiskSector.SectorCoordRangeMinZ && sgc->Zcoord <= GalaxyComponentsConfig::CoreDiskSector.SectorCoordRangeMaxZ)
+            {
+                s->numStars = CreatingRandom32BitIntNumbers(CreatingSeed(), GalaxyComponentsConfig::CoreDiskSector.SectorNumStarsMin, GalaxyComponentsConfig::CoreDiskSector.SectorNumStarsMax);
+            }
+            if(sgc->Xcoord >= GalaxyComponentsConfig::MidDiskSector.SectorCoordRangeMinX && sgc->Xcoord <= GalaxyComponentsConfig::MidDiskSector.SectorCoordRangeMaxX &&
+            sgc->Ycoord >= GalaxyComponentsConfig::MidDiskSector.SectorCoordRangeMinY && sgc->Ycoord <= GalaxyComponentsConfig::MidDiskSector.SectorCoordRangeMaxY &&
+            sgc->Zcoord >= GalaxyComponentsConfig::MidDiskSector.SectorCoordRangeMinZ && sgc->Zcoord <= GalaxyComponentsConfig::MidDiskSector.SectorCoordRangeMaxZ)
+            {
+                s->numStars = CreatingRandom32BitIntNumbers(CreatingSeed(), GalaxyComponentsConfig::MidDiskSector.SectorNumStarsMin, GalaxyComponentsConfig::MidDiskSector.SectorNumStarsMax);
+            }
+            if(sgc->Xcoord >= GalaxyComponentsConfig::OuterDiskSector.SectorCoordRangeMinX && sgc->Xcoord <= GalaxyComponentsConfig::OuterDiskSector.SectorCoordRangeMaxX &&
+            sgc->Ycoord >= GalaxyComponentsConfig::OuterDiskSector.SectorCoordRangeMinY && sgc->Ycoord <= GalaxyComponentsConfig::OuterDiskSector.SectorCoordRangeMaxY &&
+            sgc->Zcoord >= GalaxyComponentsConfig::OuterDiskSector.SectorCoordRangeMinZ && sgc->Zcoord <= GalaxyComponentsConfig::OuterDiskSector.SectorCoordRangeMaxZ)
+            {
+                s->numStars = CreatingRandom32BitIntNumbers(CreatingSeed(), GalaxyComponentsConfig::OuterDiskSector.SectorNumStarsMin, GalaxyComponentsConfig::OuterDiskSector.SectorNumStarsMax);
+            }
+            if(sgc->Xcoord >= GalaxyComponentsConfig::EdgeDiskSector.SectorCoordRangeMinX && sgc->Xcoord <= GalaxyComponentsConfig::EdgeDiskSector.SectorCoordRangeMaxX &&
+            sgc->Ycoord >= GalaxyComponentsConfig::EdgeDiskSector.SectorCoordRangeMinY && sgc->Ycoord <= GalaxyComponentsConfig::EdgeDiskSector.SectorCoordRangeMaxY &&
+            sgc->Zcoord >= GalaxyComponentsConfig::EdgeDiskSector.SectorCoordRangeMinZ && sgc->Zcoord <= GalaxyComponentsConfig::EdgeDiskSector.SectorCoordRangeMaxZ)
+            {
+                s->numStars = CreatingRandom32BitIntNumbers(CreatingSeed(), GalaxyComponentsConfig::EdgeDiskSector.SectorNumStarsMin, GalaxyComponentsConfig::EdgeDiskSector.SectorNumStarsMax);
+            }
+//            else
+//            {
+//                std::cout << " error ranges are not lining up" << std::endl;
+//            }
+
+			std::cout << " This entity with sectorcoords of " << sgc->Xcoord << " x " << sgc->Ycoord << " y " << sgc->Zcoord << " z generated this amount of stars of " << s->numStars << std::endl;
 			ss->stage = 2;
 		}
 	}
@@ -79,7 +117,7 @@ void GalaxySystems::CreatePlanetsFromStarSystem(const flecs::iter& iter, GalaxyC
 			e.set<GalaxyComponents::Star>({ StarSize });
 			for (int16_t i = 0; i < ssy->numPlants; i++)
 			{
-				auto e = iter.world().entity().child_of(iter.world().entity(it));
+				auto e = iter.world().entity().child_of(iter.world().entity());
 				uint8_t planetSize = CreatingRandom32BitIntNumbers(CreatingSeed(), 1, 10);
 				e.set<GalaxyComponents::Planet>({ planetSize });
 				//std::cout << " This entity with planet generated the planetsize of " << planetSize << std::endl;
